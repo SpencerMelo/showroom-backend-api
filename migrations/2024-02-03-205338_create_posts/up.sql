@@ -1,4 +1,4 @@
-CREATE TABLE post
+CREATE TABLE posts
 (
     id            uuid primary key,
     brand         varchar not null,
@@ -15,5 +15,5 @@ CREATE TABLE post
     price         varchar not null,
     thumbnail_url varchar not null,
     author        varchar not null,
-    published     boolean not null
+    published     boolean not null default false
 );

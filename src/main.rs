@@ -23,7 +23,7 @@ async fn main() {
     let pool = get_connection_pool();
 
     info!("Establishing server configuration");
-    let cors = CorsLayer::new().allow_methods([Method::GET, Method::POST]).allow_origin(Any);
+    let cors = CorsLayer::new().allow_methods([Method::GET, Method::POST, Method::PATCH]).allow_origin(Any);
     let routes = Router::new().merge(post_controller::router(pool).layer(cors));
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 

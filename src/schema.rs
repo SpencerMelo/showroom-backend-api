@@ -1,7 +1,7 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    post (id) {
+    posts (id) {
         id -> Uuid,
         brand -> Varchar,
         model -> Varchar,
