@@ -6,7 +6,7 @@ use axum::routing::{get, post, patch};
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::prelude::*;
-use uuid::{Uuid};
+use uuid::Uuid;
 
 use showroom_backend_api::models::models::Post;
 use showroom_backend_api::models::models::CreatePost;
