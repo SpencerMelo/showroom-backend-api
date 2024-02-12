@@ -4,21 +4,31 @@ use showroom_backend_api::schema::posts::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
+use log::{error, info};
 
 use uuid::Uuid;
 
-pub fn get_all_posts(pool: Pool<ConnectionManager<PgConnection>>, limit: u8) -> Vec<Post> {
+pub fn get_all_posts(pool: Pool<ConnectionManager<PgConnection>>, limit: u8) -> Option<Vec<Post>> {
+    info!("Get all posts, limited to {}", limit);
     let connection: &mut PgConnection = &mut pool.get().unwrap();
 
-    posts
+    let post_list = posts
         .filter(published.eq(true))
         .limit(limit.into())
         .select(Post::as_select())
-        .load(connection)
-        .expect("Error loading posts")
+        .load(connection);
+
+    match post_list {
+        Ok(post_list) => Some(post_list),
+        Err(err) => {
+            error!("Unable to retrieve posts, error: {}", err.to_string());
+            None
+        }
+    }
 }
 
 pub fn get_post(pool: Pool<ConnectionManager<PgConnection>>, post_id: Uuid) -> Option<Post> {
+    info!("Get post with id: {}", post_id);
     let connection: &mut PgConnection = &mut pool.get().unwrap();
 
     let result = posts
@@ -33,7 +43,8 @@ pub fn get_post(pool: Pool<ConnectionManager<PgConnection>>, post_id: Uuid) -> O
     }
 }
 
-pub fn create_post(pool: Pool<ConnectionManager<PgConnection>>, create_post: CreatePost) -> Post {
+pub fn create_post(pool: Pool<ConnectionManager<PgConnection>>, create_post: CreatePost) -> Option<Post> {
+    info!("Create post: {:?}", create_post);
     let connection: &mut PgConnection = &mut pool.get().unwrap();
 
     let new_post: Post = Post {
@@ -55,14 +66,22 @@ pub fn create_post(pool: Pool<ConnectionManager<PgConnection>>, create_post: Cre
         published: true,
     };
 
-    diesel::insert_into(posts)
+    let created_post = diesel::insert_into(posts)
         .values(&new_post)
         .returning(Post::as_returning())
-        .get_result(connection)
-        .expect("Error saving new post")
+        .get_result(connection);
+
+    match created_post {
+        Ok(post) => Some(post),
+        Err(err) => {
+            error!("Unable to create post, error: {}", err.to_string());
+            None
+        }
+    }
 }
 
 pub fn update_post(pool: Pool<ConnectionManager<PgConnection>>, post: Post) -> usize {
+    info!("Update post to : {:?}", post);
     let connection: &mut PgConnection = &mut pool.get().unwrap();
 
     let update_count = diesel::update(posts)
@@ -74,6 +93,7 @@ pub fn update_post(pool: Pool<ConnectionManager<PgConnection>>, post: Post) -> u
 }
 
 pub fn delete_post(pool: Pool<ConnectionManager<PgConnection>>, post_id: Uuid) -> usize {
+    info!("Delete post with id: {}", post_id);
     let connection: &mut PgConnection = &mut pool.get().unwrap();
 
     let delete_count = diesel::delete(posts)

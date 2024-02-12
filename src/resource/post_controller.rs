@@ -24,21 +24,24 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
 }
 
 pub async fn get_all(State(pool): State<Pool<ConnectionManager<PgConnection>>>) -> Response {
-    let posts: Vec<Post> = post_service::get_all_posts(pool, 100);
-    (StatusCode::OK, Json(posts)).into_response()
+    match post_service::get_all_posts(pool, 100) {
+        Some(posts) => (StatusCode::OK, Json(posts)).into_response(),
+        None => (StatusCode::INTERNAL_SERVER_ERROR).into_response()
+    }
 }
 
 pub async fn get_one(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Path(post_id): Path<Uuid>) -> Response {
-    let post: Option<Post> = post_service::get_post(pool, post_id);
-    match post {
+    match post_service::get_post(pool, post_id) {
         Some(result) => (StatusCode::OK, Json(result)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
 pub async fn create(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Json(payload): Json<CreatePost>) -> Response {
-    let created_post = post_service::create_post(pool, payload);
-    (StatusCode::CREATED, Json(created_post)).into_response()
+    match post_service::create_post(pool, payload) {
+        Some(post) => (StatusCode::CREATED, Json(post)).into_response(),
+        None => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
 }
 
 pub async fn update(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Json(payload): Json<Post>) -> Response {
