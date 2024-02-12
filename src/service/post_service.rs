@@ -7,7 +7,7 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableH
 
 use uuid::Uuid;
 
-pub fn get_all(pool: Pool<ConnectionManager<PgConnection>>, limit: u8) -> Vec<Post> {
+pub fn get_all_posts(pool: Pool<ConnectionManager<PgConnection>>, limit: u8) -> Vec<Post> {
     let connection: &mut PgConnection = &mut pool.get().unwrap();
 
     posts
@@ -55,13 +55,11 @@ pub fn create_post(pool: Pool<ConnectionManager<PgConnection>>, create_post: Cre
         published: true,
     };
 
-    let result: Post = diesel::insert_into(posts)
+    diesel::insert_into(posts)
         .values(&new_post)
         .returning(Post::as_returning())
         .get_result(connection)
-        .expect("Error saving new post");
-
-    result
+        .expect("Error saving new post")
 }
 
 pub fn update_post(pool: Pool<ConnectionManager<PgConnection>>, post: Post) -> usize {
@@ -72,8 +70,15 @@ pub fn update_post(pool: Pool<ConnectionManager<PgConnection>>, post: Post) -> u
         .set(post)
         .execute(connection);
 
-    match update_count {
-        Ok(update_count) => update_count,
-        Err(_) => 0
-    }
+    update_count.unwrap_or_else(|_| 0)
+}
+
+pub fn delete_post(pool: Pool<ConnectionManager<PgConnection>>, post_id: Uuid) -> usize {
+    let connection: &mut PgConnection = &mut pool.get().unwrap();
+
+    let delete_count = diesel::delete(posts)
+        .filter(id.eq(post_id))
+        .execute(connection);
+
+    delete_count.unwrap_or_else(|_| 0)
 }

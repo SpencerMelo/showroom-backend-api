@@ -3,6 +3,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post, patch};
+use axum::routing::delete;
 use diesel::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
 use uuid::Uuid;
@@ -18,31 +19,42 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
         .route("/v1/post", post(create))
         .route("/v1/post", patch(update))
         .route("/v1/post/:id", get(get_one))
+        .route("/v1/post/:id", delete(delete_one))
         .with_state(pool)
 }
 
 pub async fn get_all(State(pool): State<Pool<ConnectionManager<PgConnection>>>) -> Response {
-    let results: Vec<Post> = post_service::get_all(pool, 100);
-    (StatusCode::OK, Json(results)).into_response()
+    let posts: Vec<Post> = post_service::get_all_posts(pool, 100);
+    (StatusCode::OK, Json(posts)).into_response()
 }
 
 pub async fn get_one(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Path(post_id): Path<Uuid>) -> Response {
-    let result: Option<Post> = post_service::get_post(pool, post_id);
-    match result {
+    let post: Option<Post> = post_service::get_post(pool, post_id);
+    match post {
         Some(result) => (StatusCode::OK, Json(result)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
 pub async fn create(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Json(payload): Json<CreatePost>) -> Response {
-    let result = post_service::create_post(pool, payload);
-    (StatusCode::CREATED, Json(result)).into_response()
+    let created_post = post_service::create_post(pool, payload);
+    (StatusCode::CREATED, Json(created_post)).into_response()
 }
 
 pub async fn update(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Json(payload): Json<Post>) -> Response {
-    let affect_count = post_service::update_post(pool, payload);
+    let update_count = post_service::update_post(pool, payload);
 
-    if affect_count > 0 {
+    if update_count > 0 {
+        StatusCode::NO_CONTENT.into_response()
+    } else {
+        StatusCode::NOT_FOUND.into_response()
+    }
+}
+
+pub async fn delete_one(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Path(post_id): Path<Uuid>) -> Response {
+    let delete_count = post_service::delete_post(pool, post_id);
+
+    if delete_count > 0 {
         StatusCode::NO_CONTENT.into_response()
     } else {
         StatusCode::NOT_FOUND.into_response()
