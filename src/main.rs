@@ -1,7 +1,7 @@
 use axum::{Router};
 use axum::http::Method;
 use dotenvy::dotenv;
-use log::info;
+use log::{error, info};
 use tower_http::cors::CorsLayer;
 use tower_http::cors::Any;
 use tokio::signal;
@@ -19,19 +19,23 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    info!("Establishing database connection");
+    info!("Establishing database connection pool...");
     let pool = get_connection_pool();
+    info!("Database connection pool established.");
 
-    info!("Establishing server configuration");
+    info!("Establishing server configurations");
     let cors = CorsLayer::new().allow_methods([Method::GET, Method::POST, Method::PATCH]).allow_origin(Any);
     let routes = Router::new().merge(post_controller::router(pool).layer(cors));
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    info!("Server configurations established.");
 
-    info!("Server starting");
+    info!("Starting server...");
     axum::serve(listener, routes)
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .unwrap();
+        .unwrap_or_else(|err| {
+            error!("Unable to start the server, error: {}", err);
+        });
     info!("Server stopped.");
 }
 
