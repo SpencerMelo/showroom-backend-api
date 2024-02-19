@@ -24,42 +24,44 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
 }
 
 pub async fn get_all(State(pool): State<Pool<ConnectionManager<PgConnection>>>) -> Response {
-    match post_service::get_all_posts(pool, 100) {
-        Some(posts) => (StatusCode::OK, Json(posts)).into_response(),
-        None => (StatusCode::INTERNAL_SERVER_ERROR).into_response()
+    match post_service::get_all_posts(pool, u8::MAX) {
+        Ok(posts) => (StatusCode::OK, Json(posts)).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
     }
 }
 
 pub async fn get_one(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Path(post_id): Path<Uuid>) -> Response {
     match post_service::get_post(pool, post_id) {
-        Some(result) => (StatusCode::OK, Json(result)).into_response(),
-        None => StatusCode::NOT_FOUND.into_response(),
+        Ok(result) => (StatusCode::OK, Json(result)).into_response(),
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
 pub async fn create(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Json(payload): Json<CreatePost>) -> Response {
     match post_service::create_post(pool, payload) {
-        Some(post) => (StatusCode::CREATED, Json(post)).into_response(),
-        None => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Ok(post) => (StatusCode::CREATED, Json(post)).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 
 pub async fn update(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Json(payload): Json<Post>) -> Response {
-    let update_count = post_service::update_post(pool, payload);
-
-    if update_count > 0 {
-        StatusCode::NO_CONTENT.into_response()
-    } else {
-        StatusCode::NOT_FOUND.into_response()
+    match post_service::update_post(pool, payload) {
+        Ok(count) => get_status_code_for_count(count).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
     }
 }
 
 pub async fn delete_one(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Path(post_id): Path<Uuid>) -> Response {
-    let delete_count = post_service::delete_post(pool, post_id);
+    match post_service::delete_post(pool, post_id) {
+        Ok(count) => get_status_code_for_count(count).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
+    }
+}
 
-    if delete_count > 0 {
-        StatusCode::NO_CONTENT.into_response()
+fn get_status_code_for_count(count: usize) -> StatusCode {
+    if count > 0 {
+        StatusCode::NO_CONTENT
     } else {
-        StatusCode::NOT_FOUND.into_response()
+        StatusCode::NOT_FOUND
     }
 }
