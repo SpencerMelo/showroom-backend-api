@@ -20,7 +20,9 @@ async fn main() {
     env_logger::init();
 
     info!("Establishing database connection pool...");
-    let pool = get_connection_pool();
+    let pool = get_connection_pool().unwrap_or_else(|_| {
+        panic!("Unable to establish database connection")
+    });
     info!("Database connection pool established.");
 
     info!("Establishing server configurations");

@@ -1,15 +1,42 @@
 use std::env;
+use std::error::Error;
 use std::time::Duration;
 use diesel::PgConnection;
 use diesel::r2d2::{ConnectionManager, NopErrorHandler, Pool};
+use log::{error, warn};
 
-pub fn get_connection_pool() -> Pool<ConnectionManager<PgConnection>> {
-    let database_url: String = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager: ConnectionManager<PgConnection> = ConnectionManager::<PgConnection>::new(database_url);
+pub fn get_connection_pool() -> Result<Pool<ConnectionManager<PgConnection>>, Box<dyn Error>> {
     Pool::builder()
-        .connection_timeout(Duration::from_secs(30))
+        .connection_timeout(get_connection_timeout())
         .error_handler(Box::new(NopErrorHandler))
-        .test_on_check_out(true)
-        .build(manager)
-        .expect("Could not build connection pool")
+        .build(ConnectionManager::<PgConnection>::new(read_database_url()?))
+        .map_err(|err| {
+            error!("Unable to connect to database, error: {}", err);
+            err.into()
+        })
+}
+
+fn read_database_url() -> Result<String, env::VarError> {
+    env::var("DATABASE_URL").map_err(|err| {
+        error!("environment variable 'DATABASE_URL' must be provided, error: {}", err);
+        err
+    })
+}
+
+fn get_connection_timeout() -> Duration {
+    let default_timeout: u64 = 30;
+    let timeout_key = "DATABASE_CONNECTION_TIMEOUT";
+    let timeout = env::var(timeout_key)
+        .map_or_else(
+            |err| {
+                warn!("Unable to read '{}', error: {}, default to: {} seconds", timeout_key, err, default_timeout);
+                default_timeout
+            },
+            |value| {
+                value.parse::<u64>().unwrap_or_else(|err| {
+                    warn!("Unable to parse '{}', error: {}, default to: {} seconds", timeout_key, err, default_timeout);
+                    default_timeout
+                })
+            });
+    Duration::from_secs(timeout)
 }
