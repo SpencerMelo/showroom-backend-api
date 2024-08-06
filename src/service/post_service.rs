@@ -8,12 +8,13 @@ use std::error::Error;
 
 use uuid::Uuid;
 
-pub fn get_all_posts(pool: Pool<ConnectionManager<PgConnection>>, limit: u8) -> Result<Vec<Post>, Box<dyn Error>> {
-    info!("Get all posts, limited to {}", limit);
+pub fn get_posts(pool: Pool<ConnectionManager<PgConnection>>, page: u32, limit: u32) -> Result<Vec<Post>, Box<dyn Error>> {
+    info!("Get all posts from page {}, limited to {}", page, limit);
 
     let post_list = posts
         .filter(published.eq(true))
         .limit(limit.into())
+        .offset((limit * (page - 1)).into())
         .select(Post::as_select())
         .load(&mut get_connection(&pool)?);
 

@@ -9,14 +9,14 @@ pub fn get_connection_pool() -> Result<Pool<ConnectionManager<PgConnection>>, Bo
     Pool::builder()
         .connection_timeout(get_connection_timeout())
         .error_handler(Box::new(NopErrorHandler))
-        .build(ConnectionManager::<PgConnection>::new(read_database_url()?))
+        .build(ConnectionManager::<PgConnection>::new(get_database_url()?))
         .map_err(|err| {
             error!("Unable to connect to database, error: {}", err);
             err.into()
         })
 }
 
-fn read_database_url() -> Result<String, env::VarError> {
+fn get_database_url() -> Result<String, env::VarError> {
     env::var("DATABASE_URL").map_err(|err| {
         error!("environment variable 'DATABASE_URL' must be provided, error: {}", err);
         err
@@ -94,7 +94,7 @@ mod tests {
         env::remove_var("DATABASE_URL");
 
         // When 'the application get the database url'
-        let current_database_url = read_database_url();
+        let current_database_url = get_database_url();
 
         // Then 'the result should be an Error'
         assert_eq!(current_database_url, Err(env::VarError::NotPresent));
@@ -108,7 +108,7 @@ mod tests {
         env::set_var("DATABASE_URL", "current_value");
 
         // When 'the application get the database url'
-        let current_database_url = read_database_url();
+        let current_database_url = get_database_url();
 
         // Then 'the database url should be the value from the environment variable'
         assert_eq!(current_database_url.unwrap(), "current_value");

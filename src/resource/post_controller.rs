@@ -1,11 +1,12 @@
 use axum::{Json, Router};
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post, patch};
 use axum::routing::delete;
 use diesel::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
+use serde::Deserialize;
 use uuid::Uuid;
 
 use showroom_backend_api::models::models::Post;
@@ -23,8 +24,14 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
         .with_state(pool)
 }
 
-pub async fn get_all(State(pool): State<Pool<ConnectionManager<PgConnection>>>) -> Response {
-    match post_service::get_all_posts(pool, u8::MAX) {
+#[derive(Deserialize)]
+pub struct Pagination {
+    page: u32,
+    per_page: u32
+}
+
+pub async fn get_all(State(pool): State<Pool<ConnectionManager<PgConnection>>>, pagination: Query<Pagination>) -> Response {
+    match post_service::get_posts(pool, pagination.page, pagination.per_page) {
         Ok(posts) => (StatusCode::OK, Json(posts)).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
     }
