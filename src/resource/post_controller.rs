@@ -1,16 +1,16 @@
-use axum::{Json, Router};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post, patch};
 use axum::routing::delete;
-use diesel::PgConnection;
+use axum::routing::{get, patch, post};
+use axum::{Json, Router};
 use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use showroom_backend_api::models::models::Post;
 use showroom_backend_api::models::models::CreatePost;
+use showroom_backend_api::models::models::Post;
 
 use crate::service::post_service;
 
@@ -26,42 +26,61 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
 
 #[derive(Deserialize)]
 pub struct Pagination {
-    page: u32,
-    per_page: u32
+    page: Option<u32>,
+    per_page: Option<u32>,
 }
 
-pub async fn get_all(State(pool): State<Pool<ConnectionManager<PgConnection>>>, pagination: Query<Pagination>) -> Response {
-    match post_service::get_posts(pool, pagination.page, pagination.per_page) {
+pub async fn get_all(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    pagination: Query<Pagination>,
+) -> Response {
+    match post_service::get_posts(
+        pool,
+        pagination.page.unwrap_or(1),
+        pagination.per_page.unwrap_or(10),
+    ) {
         Ok(posts) => (StatusCode::OK, Json(posts)).into_response(),
-        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 
-pub async fn get_one(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Path(post_id): Path<Uuid>) -> Response {
+pub async fn get_one(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Path(post_id): Path<Uuid>,
+) -> Response {
     match post_service::get_post(pool, post_id) {
         Ok(result) => (StatusCode::OK, Json(result)).into_response(),
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
-pub async fn create(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Json(payload): Json<CreatePost>) -> Response {
+pub async fn create(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Json(payload): Json<CreatePost>,
+) -> Response {
     match post_service::create_post(pool, payload) {
         Ok(post) => (StatusCode::CREATED, Json(post)).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 
-pub async fn update(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Json(payload): Json<Post>) -> Response {
+pub async fn update(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Json(payload): Json<Post>,
+) -> Response {
     match post_service::update_post(pool, payload) {
         Ok(count) => get_status_code_for_count(count).into_response(),
-        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 
-pub async fn delete_one(State(pool): State<Pool<ConnectionManager<PgConnection>>>, Path(post_id): Path<Uuid>) -> Response {
+pub async fn delete_one(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Path(post_id): Path<Uuid>,
+) -> Response {
     match post_service::delete_post(pool, post_id) {
         Ok(count) => get_status_code_for_count(count).into_response(),
-        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
 }
 
