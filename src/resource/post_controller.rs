@@ -9,8 +9,8 @@ use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use showroom_backend_api::models::models::CreatePost;
-use showroom_backend_api::models::models::Post;
+use showroom_api::models::models::CreatePost;
+use showroom_api::models::models::Post;
 
 use crate::service::post_service;
 

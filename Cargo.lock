@@ -905,7 +905,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "showroom-backend-api"
+name = "showroom-api"
 version = "0.1.0"
 dependencies = [
  "axum",

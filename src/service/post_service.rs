@@ -1,5 +1,5 @@
-use showroom_backend_api::models::models::{CreatePost, Post};
-use showroom_backend_api::schema::posts::dsl::*;
+use showroom_api::models::models::{CreatePost, Post};
+use showroom_api::schema::posts::dsl::*;
 
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
