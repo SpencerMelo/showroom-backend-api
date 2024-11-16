@@ -122,4 +122,32 @@ mod tests {
         // Then 'the database url should be the value from the environment variable'
         assert_eq!(current_database_url.unwrap(), "current_value");
     }
+
+    #[test]
+    #[serial(db_url)]
+    fn not_able_to_create_pool() {
+        // Given
+        env::set_var("DATABASE_URL", "postgres://postgres:invalid@localhost/core");
+        env::set_var("DATABASE_CONNECTION_TIMEOUT", "5");
+
+        // When
+        let pool = get_connection_pool();
+
+        // Then
+        assert!(pool.is_err());
+    }
+
+    #[test]
+    #[serial(db_url)]
+    fn able_to_create_pool() {
+        // Given
+        env::set_var("DATABASE_URL", "postgres://postgres:admin@localhost/core");
+        env::set_var("DATABASE_CONNECTION_TIMEOUT", "5");
+
+        // When
+        let pool = get_connection_pool();
+
+        // Then
+        assert!(matches!(pool, Ok(_)));
+    }
 }
