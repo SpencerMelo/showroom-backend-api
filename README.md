@@ -13,11 +13,15 @@
 ```shell
   cargo build
 ```
+#### Run migrations
+```shell
+diesel migration run
+```
 #### Run command
 ```shell
   cargo run
 ```
 #### Test command
 ```shell
-  cargo test 
+  cargo test
 ```
