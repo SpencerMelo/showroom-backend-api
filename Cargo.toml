@@ -9,13 +9,13 @@ edition = "2021"
 axum = { version = "0.7.5" }
 dotenvy = "0.15.7"
 log = "0.4.22"
-serde = { version = "1.0.204", features = ["derive"] }
-tokio = { version = "1.39.2", features = ["rt", "macros", "rt-multi-thread", "signal"] }
+serde = { version = "1.0.215", features = ["derive"] }
+tokio = { version = "1.41.1", features = ["rt", "macros", "rt-multi-thread", "signal"] }
 env_logger = "0.11.5"
-tower-http = { version = "0.5.2", features = ["cors"] }
-diesel = { version = "2.2.2", features = ["postgres", "r2d2", "uuid"] }
-uuid = { version = "1.10.0", features = ["serde", "v8", "v4"] }
-serde_json = "1.0.122"
+tower-http = { version = "0.6.1", features = ["cors"] }
+diesel = { version = "2.2.4", features = ["postgres", "r2d2", "uuid"] }
+uuid = { version = "1.11.0", features = ["serde", "v8", "v4"] }
+serde_json = "1.0.132"
 axum-macros = "0.4.1"
-serial_test = "3.1.1"
+serial_test = "3.2.0"
 
