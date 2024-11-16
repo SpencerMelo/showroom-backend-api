@@ -2,7 +2,9 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Queryable, Selectable, Serialize, Deserialize, Insertable, Identifiable, AsChangeset, Debug)]
+#[derive(
+    Queryable, Selectable, Serialize, Deserialize, Insertable, Identifiable, AsChangeset, Debug,
+)]
 #[diesel(table_name = crate::schema::posts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Post {
@@ -21,7 +23,7 @@ pub struct Post {
     pub price: String,
     pub thumbnail_url: String,
     pub author: String,
-    pub published: bool
+    pub published: bool,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -37,7 +39,7 @@ pub struct CreatePost {
     pub body: String,
     pub armored: bool,
     pub exchange: bool,
-    pub price: String ,
+    pub price: String,
     pub thumbnail_url: String,
-    pub author: String
+    pub author: String,
 }

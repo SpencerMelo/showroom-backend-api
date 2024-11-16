@@ -8,7 +8,11 @@ use std::error::Error;
 
 use uuid::Uuid;
 
-pub fn get_posts(pool: Pool<ConnectionManager<PgConnection>>, page: u32, limit: u32) -> Result<Vec<Post>, Box<dyn Error>> {
+pub fn get_posts(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    page: u32,
+    limit: u32,
+) -> Result<Vec<Post>, Box<dyn Error>> {
     info!("Get all posts from page {}, limited to {}", page, limit);
 
     let post_list = posts
@@ -27,7 +31,10 @@ pub fn get_posts(pool: Pool<ConnectionManager<PgConnection>>, page: u32, limit: 
     }
 }
 
-pub fn get_post(pool: Pool<ConnectionManager<PgConnection>>, post_id: Uuid) -> Result<Post, Box<dyn Error>> {
+pub fn get_post(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    post_id: Uuid,
+) -> Result<Post, Box<dyn Error>> {
     info!("Get post with id: {}", post_id);
 
     let result = posts
@@ -44,7 +51,10 @@ pub fn get_post(pool: Pool<ConnectionManager<PgConnection>>, post_id: Uuid) -> R
     }
 }
 
-pub fn create_post(pool: Pool<ConnectionManager<PgConnection>>, create_post: CreatePost) -> Result<Post, Box<dyn Error>> {
+pub fn create_post(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    create_post: CreatePost,
+) -> Result<Post, Box<dyn Error>> {
     info!("Create post: {:?}", create_post);
 
     let new_post: Post = Post {
@@ -80,7 +90,10 @@ pub fn create_post(pool: Pool<ConnectionManager<PgConnection>>, create_post: Cre
     }
 }
 
-pub fn update_post(pool: Pool<ConnectionManager<PgConnection>>, post: Post) -> Result<usize, Box<dyn Error>> {
+pub fn update_post(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    post: Post,
+) -> Result<usize, Box<dyn Error>> {
     info!("Update post to : {:?}", post);
 
     let update_count = diesel::update(posts)
@@ -97,7 +110,10 @@ pub fn update_post(pool: Pool<ConnectionManager<PgConnection>>, post: Post) -> R
     }
 }
 
-pub fn delete_post(pool: Pool<ConnectionManager<PgConnection>>, post_id: Uuid) -> Result<usize, Box<dyn Error>> {
+pub fn delete_post(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    post_id: Uuid,
+) -> Result<usize, Box<dyn Error>> {
     info!("Delete post with id: {}", post_id);
 
     let delete_count = diesel::delete(posts)
@@ -113,7 +129,9 @@ pub fn delete_post(pool: Pool<ConnectionManager<PgConnection>>, post_id: Uuid) -
     }
 }
 
-fn get_connection(pool: &Pool<ConnectionManager<PgConnection>>) -> Result<PooledConnection<ConnectionManager<PgConnection>>, Box<dyn Error>> {
+fn get_connection(
+    pool: &Pool<ConnectionManager<PgConnection>>,
+) -> Result<PooledConnection<ConnectionManager<PgConnection>>, Box<dyn Error>> {
     let connection = pool.get().map_err(|err| {
         error!("Unable to connect to database, error: {}", err);
         Box::new(err) as Box<dyn Error>
