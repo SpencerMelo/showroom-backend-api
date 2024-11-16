@@ -15,7 +15,7 @@
 ```
 #### Run migrations
 ```shell
-diesel migration run
+  diesel migration run
 ```
 #### Run command
 ```shell
