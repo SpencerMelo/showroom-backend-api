@@ -14,6 +14,8 @@ use showroom_api::models::models::Post;
 
 use crate::service::post_service;
 
+const MAX_LIMIT: u32 = 100;
+
 pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
     Router::new()
         .route("/v1/post", get(get_all))
@@ -26,18 +28,22 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
 
 #[derive(Deserialize)]
 pub struct Pagination {
-    page: Option<u32>,
-    per_page: Option<u32>,
+    offset: Option<u32>,
+    limit: Option<u32>,
+    sort_by: Option<String>,
+    sort_order: Option<String>,
 }
 
 pub async fn get_all(
     State(pool): State<Pool<ConnectionManager<PgConnection>>>,
-    pagination: Query<Pagination>,
+    Query(pagination): Query<Pagination>,
 ) -> Response {
     match post_service::get_posts(
         pool,
-        pagination.page.unwrap_or(1),
-        pagination.per_page.unwrap_or(10),
+        pagination.offset.unwrap_or(0),
+        pagination.limit.unwrap_or(10).min(MAX_LIMIT),
+        pagination.sort_by.unwrap_or_else(|| String::from("model")),
+        pagination.sort_order.unwrap_or_else(|| String::from("asc")),
     ) {
         Ok(posts) => (StatusCode::OK, Json(posts)).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),

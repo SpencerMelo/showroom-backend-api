@@ -1,8 +1,14 @@
+use diesel::pg::Pg;
+use diesel::query_builder::QueryFragment;
+use diesel::sql_types::Text;
 use showroom_api::models::models::{CreatePost, Post};
-use showroom_api::schema::posts::dsl::*;
+use showroom_api::schema::posts::{self, brand, dsl::*, model, BoxedQuery};
 
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
-use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{
+    AppearsOnTable, BoxableExpression, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl,
+    SelectableHelper,
+};
 use log::{error, info};
 use std::error::Error;
 
@@ -10,17 +16,27 @@ use uuid::Uuid;
 
 pub fn get_posts(
     pool: Pool<ConnectionManager<PgConnection>>,
-    page: u32,
+    offset: u32,
     limit: u32,
+    sort_by: String,
+    sort_order: String,
 ) -> Result<Vec<Post>, Box<dyn Error>> {
-    info!("Get all posts from page {}, limited to {}", page, limit);
+    info!(
+        "Get all posts from page {}, limited to {}, sort by {}, order {}",
+        offset, limit, sort_by, sort_order
+    );
 
-    let post_list = posts
+    let mut query = posts::table
+        .into_boxed()
         .filter(published.eq(true))
-        .limit(limit.into())
-        .offset((limit * (page - 1)).into())
-        .select(Post::as_select())
-        .load(&mut get_connection(&pool)?);
+        .limit(limit as i64)
+        .offset(offset as i64);
+
+    let column = get_sort_column(sort_by.as_str());
+
+    query = sort_by_column(query, column, Some(sort_order));
+
+    let post_list = query.load(&mut get_connection(&pool)?);
 
     match post_list {
         Ok(post_list) => Ok(post_list),
@@ -138,4 +154,39 @@ fn get_connection(
     })?;
 
     Ok(connection)
+}
+
+fn get_sort_column(
+    sort_by: &str,
+) -> Box<dyn BoxableExpression<posts::table, diesel::pg::Pg, SqlType = Text>> {
+    match sort_by {
+        "brand" => Box::new(brand),
+        "model" => Box::new(model),
+        "version" => Box::new(version),
+        "engine" => Box::new(engine),
+        "transmission" => Box::new(transmission),
+        "year" => Box::new(year),
+        "color" => Box::new(color),
+        "body" => Box::new(body),
+        "price" => Box::new(price),
+        "thumbnail_url" => Box::new(thumbnail_url),
+        "author" => Box::new(author),
+        _ => panic!("Unknown column name: {}", sort_by),
+    }
+}
+
+// https://stackoverflow.com/a/62029781
+fn sort_by_column<U: 'static + std::marker::Send>(
+    query: BoxedQuery<'static, Pg>,
+    column: U,
+    sort_dir: Option<String>,
+) -> BoxedQuery<'static, Pg>
+where
+    U: ExpressionMethods + QueryFragment<Pg> + AppearsOnTable<posts::table>,
+{
+    match sort_dir.as_ref().map(String::as_str) {
+        Some("asc") => query.order_by(column.asc()),
+        Some("desc") => query.order_by(column.desc()),
+        _ => query,
+    }
 }
