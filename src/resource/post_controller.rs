@@ -19,6 +19,7 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
         .route("/v1/post", get(get_all))
         .route("/v1/post", post(self::create))
         .route("/v1/post", patch(self::update))
+        .route("/v1/post", delete(self::bulk_delete))
         .route("/v1/post/:id", get(self::get_one))
         .route("/v1/post/:id", delete(self::delete_one))
         .with_state(pool)
@@ -83,6 +84,16 @@ pub async fn delete_one(
     Path(post_id): Path<Uuid>,
 ) -> Response {
     match post_service::delete_post(pool, post_id) {
+        Ok(count) => get_status_code_for_count(count).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+pub async fn bulk_delete(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Json(posts_ids): Json<Vec<Uuid>>,
+) -> Response {
+    match post_service::delete_posts(pool, posts_ids) {
         Ok(count) => get_status_code_for_count(count).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }

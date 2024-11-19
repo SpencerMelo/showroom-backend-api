@@ -150,6 +150,28 @@ pub fn delete_post(
     }
 }
 
+pub fn delete_posts(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    post_ids: Vec<Uuid>,
+) -> Result<usize, Box<dyn Error>> {
+    info!("Delete posts with ids: {:?}", post_ids);
+
+    let delete_count = diesel::delete(posts)
+        .filter(id.eq_any(post_ids))
+        .execute(&mut get_connection(&pool)?);
+
+    match delete_count {
+        Ok(count) => {
+            info!("Posts delete count: {}", count);
+            Ok(count)
+        }
+        Err(err) => {
+            error!("Unable to delete posts, error: {}", err);
+            Err(err.into())
+        }
+    }
+}
+
 fn get_connection(
     pool: &Pool<ConnectionManager<PgConnection>>,
 ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, Box<dyn Error>> {
