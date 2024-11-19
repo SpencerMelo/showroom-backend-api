@@ -18,7 +18,7 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
     Router::new()
         .route("/v1/post", get(get_all))
         // Single operations
-        .route("/v1/post", post(self::create))
+        .route("/v1/post", post(self::create_one))
         .route("/v1/post/:id", get(self::get_one))
         .route("/v1/post/:id", delete(self::delete_one))
         .route("/v1/post/:id", patch(self::update_one))
@@ -63,7 +63,7 @@ pub async fn get_one(
     }
 }
 
-pub async fn create(
+pub async fn create_one(
     State(pool): State<Pool<ConnectionManager<PgConnection>>>,
     Json(payload): Json<CreatePost>,
 ) -> Response {
