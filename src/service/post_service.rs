@@ -1,7 +1,7 @@
 use diesel::pg::Pg;
 use diesel::query_builder::QueryFragment;
 
-use crate::models::post_models::{CreatePost, Post};
+use crate::models::post_models::{CreatePost, Post, UpdatePost};
 use crate::schema::posts::{self, dsl::*, BoxedQuery};
 use crate::utils::post_columns::{get_column, PostColumn};
 
@@ -111,15 +111,83 @@ pub fn create_post(
     }
 }
 
+pub fn create_posts(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    new_posts: Vec<CreatePost>,
+) -> Result<Vec<Post>, Box<dyn Error>> {
+    info!("Create posts: {:?}", new_posts);
+
+    if new_posts.is_empty() {
+        info!("No posts to create post");
+        return Err("No posts to create".into());
+    }
+
+    let mut post_entities: Vec<Post> = Vec::new();
+
+    for new_post in new_posts {
+        post_entities.push(Post {
+            id: Uuid::new_v4(),
+            brand: new_post.brand,
+            model: new_post.model,
+            version: new_post.version,
+            engine: new_post.engine,
+            transmission: new_post.transmission,
+            year: new_post.year,
+            mileage: new_post.mileage,
+            color: new_post.color,
+            body: new_post.body,
+            armored: new_post.armored,
+            exchange: new_post.exchange,
+            price: new_post.price,
+            thumbnail_url: new_post.thumbnail_url,
+            author: new_post.author,
+            published: true,
+        });
+    }
+
+    let result = diesel::insert_into(posts)
+        .values(&post_entities)
+        .returning(Post::as_returning())
+        .get_results(&mut get_connection(&pool)?);
+
+    match result {
+        Ok(created) => Ok(created),
+        Err(err) => {
+            error!("Unable to create posts, error: {}", err);
+            Err(err.into())
+        }
+    }
+}
+
 pub fn update_post(
     pool: Pool<ConnectionManager<PgConnection>>,
-    post: Post,
+    post_id: Uuid,
+    updated_post: UpdatePost,
 ) -> Result<usize, Box<dyn Error>> {
-    info!("Update post to : {:?}", post);
+    info!("Update post {} to {:?}", post_id, updated_post);
+
+    let updated_post: Post = Post {
+        id: post_id,
+        brand: updated_post.brand,
+        model: updated_post.model,
+        version: updated_post.version,
+        engine: updated_post.engine,
+        transmission: updated_post.transmission,
+        year: updated_post.year,
+        mileage: updated_post.mileage,
+        color: updated_post.color,
+        body: updated_post.body,
+        armored: updated_post.armored,
+        exchange: updated_post.exchange,
+        price: updated_post.price,
+        thumbnail_url: updated_post.thumbnail_url,
+        author: updated_post.author,
+        published: updated_post.published,
+    };
 
     let update_count = diesel::update(posts)
-        .filter(id.eq(post.id))
-        .set(post)
+        .filter(id.eq(post_id))
+        .set(updated_post)
         .execute(&mut get_connection(&pool)?);
 
     match update_count {

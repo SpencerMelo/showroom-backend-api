@@ -9,7 +9,7 @@ use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::models::post_models::{CreatePost, Post};
+use crate::models::post_models::{CreatePost, UpdatePost};
 use crate::service::post_service;
 
 const MAX_LIMIT: u32 = 100;
@@ -17,11 +17,15 @@ const MAX_LIMIT: u32 = 100;
 pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
     Router::new()
         .route("/v1/post", get(get_all))
+        // Single operations
         .route("/v1/post", post(self::create))
-        .route("/v1/post", patch(self::update))
-        .route("/v1/post", delete(self::bulk_delete))
         .route("/v1/post/:id", get(self::get_one))
         .route("/v1/post/:id", delete(self::delete_one))
+        .route("/v1/post/:id", patch(self::update_one))
+        // Bulk operations
+        .route("/v1/post/bulk", post(self::create_many))
+        .route("/v1/post/bulk", delete(self::delete_many))
+        // Route state
         .with_state(pool)
 }
 
@@ -69,11 +73,22 @@ pub async fn create(
     }
 }
 
-pub async fn update(
+pub async fn create_many(
     State(pool): State<Pool<ConnectionManager<PgConnection>>>,
-    Json(payload): Json<Post>,
+    Json(payload): Json<Vec<CreatePost>>,
 ) -> Response {
-    match post_service::update_post(pool, payload) {
+    match post_service::create_posts(pool, payload) {
+        Ok(posts) => (StatusCode::CREATED, Json(posts)).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+pub async fn update_one(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Path(post_id): Path<Uuid>,
+    Json(payload): Json<UpdatePost>,
+) -> Response {
+    match post_service::update_post(pool, post_id, payload) {
         Ok(count) => get_status_code_for_count(count).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
@@ -89,7 +104,7 @@ pub async fn delete_one(
     }
 }
 
-pub async fn bulk_delete(
+pub async fn delete_many(
     State(pool): State<Pool<ConnectionManager<PgConnection>>>,
     Json(posts_ids): Json<Vec<Uuid>>,
 ) -> Response {
