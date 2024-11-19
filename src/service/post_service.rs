@@ -22,7 +22,7 @@ pub fn get_posts(
     sort_order: String,
 ) -> Result<Vec<Post>, Box<dyn Error>> {
     info!(
-        "Get all posts from page {}, limited to {}, sort by {}, order {}",
+        "Get all posts from page '{}', limited to '{}', sort by '{}', order '{}'",
         offset, limit, sort_by, sort_order
     );
 
@@ -186,7 +186,7 @@ fn get_column(sort_by: &str) -> Column {
         "author" => Column::Text(Box::new(author)),
         "published" => Column::Bool(Box::new(published)),
         _ => {
-            info!("Unknown column name: {}, defaulting to 'model'", sort_by);
+            info!("Unknown column name: '{}', defaulting to 'model'", sort_by);
             Column::Text(Box::new(model))
         }
     }
