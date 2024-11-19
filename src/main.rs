@@ -10,9 +10,11 @@ use tower_http::cors::CorsLayer;
 use crate::resource::post_controller;
 
 mod database;
+mod models;
 mod resource;
 mod schema;
 mod service;
+mod utils;
 
 #[tokio::main]
 async fn main() {

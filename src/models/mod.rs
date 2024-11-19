@@ -1,1 +1,1 @@
-pub mod models;
+pub mod post_models;

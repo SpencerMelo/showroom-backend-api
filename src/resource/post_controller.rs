@@ -9,9 +9,7 @@ use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use showroom_api::models::models::CreatePost;
-use showroom_api::models::models::Post;
-
+use crate::models::post_models::{CreatePost, Post};
 use crate::service::post_service;
 
 const MAX_LIMIT: u32 = 100;
@@ -19,10 +17,10 @@ const MAX_LIMIT: u32 = 100;
 pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
     Router::new()
         .route("/v1/post", get(get_all))
-        .route("/v1/post", post(create))
-        .route("/v1/post", patch(update))
-        .route("/v1/post/:id", get(get_one))
-        .route("/v1/post/:id", delete(delete_one))
+        .route("/v1/post", post(self::create))
+        .route("/v1/post", patch(self::update))
+        .route("/v1/post/:id", get(self::get_one))
+        .route("/v1/post/:id", delete(self::delete_one))
         .with_state(pool)
 }
 

@@ -1,13 +1,13 @@
 use diesel::pg::Pg;
 use diesel::query_builder::QueryFragment;
-use diesel::sql_types::{BigInt, Bool, Integer, Text};
-use showroom_api::models::models::{CreatePost, Post};
-use showroom_api::schema::posts::{self, brand, dsl::*, model, BoxedQuery};
+
+use crate::models::post_models::{CreatePost, Post};
+use crate::schema::posts::{self, dsl::*, BoxedQuery};
+use crate::utils::post_columns::{get_column, PostColumn};
 
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::{
-    AppearsOnTable, BoxableExpression, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl,
-    SelectableHelper,
+    AppearsOnTable, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper,
 };
 use log::{error, info};
 use std::error::Error;
@@ -32,13 +32,13 @@ pub fn get_posts(
         .limit(limit as i64)
         .offset(offset as i64);
 
-    let column: Column = get_column(sort_by.as_str());
+    let column: PostColumn = get_column(sort_by.as_str());
 
     query = match column {
-        Column::Integer(col) => sort_by_column(query, col, Some(sort_order)),
-        Column::Text(col) => sort_by_column(query, col, Some(sort_order)),
-        Column::Bool(col) => sort_by_column(query, col, Some(sort_order)),
-        Column::BigInteger(col) => sort_by_column(query, col, Some(sort_order)),
+        PostColumn::Integer(col) => sort_by_column(query, col, Some(sort_order)),
+        PostColumn::Text(col) => sort_by_column(query, col, Some(sort_order)),
+        PostColumn::Bool(col) => sort_by_column(query, col, Some(sort_order)),
+        PostColumn::BigInteger(col) => sort_by_column(query, col, Some(sort_order)),
     };
 
     let post_list = query.load(&mut get_connection(&pool)?);
@@ -159,37 +159,6 @@ fn get_connection(
     })?;
 
     Ok(connection)
-}
-
-enum Column {
-    Integer(Box<dyn BoxableExpression<posts::table, diesel::pg::Pg, SqlType = Integer>>),
-    Text(Box<dyn BoxableExpression<posts::table, diesel::pg::Pg, SqlType = Text>>),
-    Bool(Box<dyn BoxableExpression<posts::table, diesel::pg::Pg, SqlType = Bool>>),
-    BigInteger(Box<dyn BoxableExpression<posts::table, diesel::pg::Pg, SqlType = BigInt>>),
-}
-
-fn get_column(sort_by: &str) -> Column {
-    match sort_by {
-        "brand" => Column::Text(Box::new(brand)),
-        "model" => Column::Text(Box::new(model)),
-        "version" => Column::Text(Box::new(version)),
-        "engine" => Column::Text(Box::new(engine)),
-        "transmission" => Column::Text(Box::new(transmission)),
-        "year" => Column::Integer(Box::new(year)),
-        "mileage" => Column::Integer(Box::new(mileage)),
-        "color" => Column::Text(Box::new(color)),
-        "body" => Column::Text(Box::new(body)),
-        "armored" => Column::Bool(Box::new(armored)),
-        "exchange" => Column::Bool(Box::new(exchange)),
-        "price" => Column::BigInteger(Box::new(price)),
-        "thumbnail_url" => Column::Text(Box::new(thumbnail_url)),
-        "author" => Column::Text(Box::new(author)),
-        "published" => Column::Bool(Box::new(published)),
-        _ => {
-            info!("Unknown column name: '{}', defaulting to 'model'", sort_by);
-            Column::Text(Box::new(model))
-        }
-    }
 }
 
 // https://stackoverflow.com/a/62029781
