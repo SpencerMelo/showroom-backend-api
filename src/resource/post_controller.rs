@@ -30,7 +30,7 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
 }
 
 #[derive(Deserialize)]
-pub struct PostParms {
+pub struct GetParams {
     offset: Option<u32>,
     limit: Option<u32>,
     sort_by: Option<String>,
@@ -41,7 +41,7 @@ pub struct PostParms {
 
 pub async fn get_all(
     State(pool): State<Pool<ConnectionManager<PgConnection>>>,
-    Query(params): Query<PostParms>,
+    Query(params): Query<GetParams>,
 ) -> Response {
     match post_service::get_posts(
         pool,
