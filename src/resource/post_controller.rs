@@ -30,23 +30,27 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
 }
 
 #[derive(Deserialize)]
-pub struct Pagination {
+pub struct PostParms {
     offset: Option<u32>,
     limit: Option<u32>,
     sort_by: Option<String>,
     sort_order: Option<String>,
+    filter_by: Option<String>,
+    filter_term: Option<String>,
 }
 
 pub async fn get_all(
     State(pool): State<Pool<ConnectionManager<PgConnection>>>,
-    Query(pagination): Query<Pagination>,
+    Query(params): Query<PostParms>,
 ) -> Response {
     match post_service::get_posts(
         pool,
-        pagination.offset.unwrap_or(0),
-        pagination.limit.unwrap_or(10).min(MAX_LIMIT),
-        pagination.sort_by.unwrap_or_else(|| String::from("model")),
-        pagination.sort_order.unwrap_or_else(|| String::from("asc")),
+        params.offset.unwrap_or(0),
+        params.limit.unwrap_or(10).min(MAX_LIMIT),
+        params.sort_by.unwrap_or_else(|| String::from("model")),
+        params.sort_order.unwrap_or_else(|| String::from("asc")),
+        params.filter_by.unwrap_or_else(|| String::from("")),
+        params.filter_term.unwrap_or_else(|| String::from("")),
     ) {
         Ok(posts) => (StatusCode::OK, Json(posts)).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),

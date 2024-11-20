@@ -20,10 +20,12 @@ pub fn get_posts(
     limit: u32,
     sort_by: String,
     sort_order: String,
+    filter_by: String,
+    filter_term: String,
 ) -> Result<Vec<Post>, Box<dyn Error>> {
     info!(
-        "Get all posts from page '{}', limited to '{}', sort by '{}', order '{}'",
-        offset, limit, sort_by, sort_order
+        "Get all posts starting at '{}', limited to '{}', sort by '{}' order '{}', filter by '{}' term '{}'",
+        offset, limit, sort_by, sort_order, filter_by, filter_term
     );
 
     let mut query = posts::table
@@ -32,14 +34,23 @@ pub fn get_posts(
         .limit(limit as i64)
         .offset(offset as i64);
 
-    let column: PostColumn = get_column(sort_by.as_str());
-
-    query = match column {
-        PostColumn::Integer(col) => sort_by_column(query, col, Some(sort_order)),
-        PostColumn::Text(col) => sort_by_column(query, col, Some(sort_order)),
-        PostColumn::Bool(col) => sort_by_column(query, col, Some(sort_order)),
-        PostColumn::BigInteger(col) => sort_by_column(query, col, Some(sort_order)),
+    let sort_column: PostColumn = get_column(sort_by.as_str());
+    query = match sort_column {
+        PostColumn::Integer(column) => sort_by_column(query, column, Some(sort_order)),
+        PostColumn::Text(column) => sort_by_column(query, column, Some(sort_order)),
+        PostColumn::Bool(column) => sort_by_column(query, column, Some(sort_order)),
+        PostColumn::BigInteger(column) => sort_by_column(query, column, Some(sort_order)),
     };
+
+    if !filter_by.is_empty() && !filter_term.is_empty() {
+        let filter_column: PostColumn = get_column(filter_by.as_str());
+        query = match filter_column {
+            PostColumn::Integer(column) => query.filter(column.eq(filter_term.parse::<i32>()?)),
+            PostColumn::Text(column) => query.filter(column.eq(filter_term)),
+            PostColumn::Bool(column) => query.filter(column.eq(filter_term.parse::<bool>()?)),
+            PostColumn::BigInteger(column) => query.filter(column.eq(filter_term.parse::<i64>()?)),
+        };
+    }
 
     let post_list = query.load(&mut get_connection(&pool)?);
 
