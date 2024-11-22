@@ -1,1 +1,1 @@
-DROP TABLE models;
+DROP TABLE IF EXISTS models;

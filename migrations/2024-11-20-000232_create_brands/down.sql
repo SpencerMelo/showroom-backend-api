@@ -1,1 +1,1 @@
-DROP TABLE brands;
+DROP TABLE IF EXISTS brands;

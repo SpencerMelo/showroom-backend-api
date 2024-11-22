@@ -5,7 +5,7 @@ CREATE TABLE models
     name          VARCHAR NOT NULL,
 
     -- Metadata
-    created_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMPTZ DEFAULT NULL,
 

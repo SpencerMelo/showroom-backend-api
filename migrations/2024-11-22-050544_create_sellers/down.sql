@@ -1,1 +1,1 @@
-DROP TABLE sellers;
+DROP TABLE IF EXISTS sellers;
