@@ -129,7 +129,7 @@ pub fn create_posts(
     info!("Create posts: {:?}", new_posts);
 
     if new_posts.is_empty() {
-        info!("No posts to create post");
+        info!("No posts to create");
         return Err("No posts to create".into());
     }
 
