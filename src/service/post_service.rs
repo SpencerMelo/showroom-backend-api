@@ -223,7 +223,7 @@ pub fn delete_post(
     match delete_count {
         Ok(count) => Ok(count),
         Err(err) => {
-            error!("Unable to delete posts, error: {}", err);
+            error!("Unable to delete post, error: {}", err);
             Err(err.into())
         }
     }
