@@ -1,11 +1,16 @@
 use crate::database::database::get_connection_pool;
+use axum::extract::Request;
 use axum::http::Method;
 use axum::Router;
+use axum::ServiceExt;
 use dotenvy::dotenv;
 use log::{error, info};
 use tokio::signal;
+use tower::Layer;
 use tower_http::cors::Any;
 use tower_http::cors::CorsLayer;
+
+use tower_http::normalize_path::NormalizePathLayer;
 
 use crate::resource::brand_controller;
 use crate::resource::post_controller;
@@ -31,15 +36,17 @@ async fn main() {
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PATCH])
         .allow_origin(Any);
-    let routes = Router::new()
-        .merge(post_controller::router(pool.clone()))
-        .merge(brand_controller::router(pool.clone()))
-        .layer(cors);
+    let app = NormalizePathLayer::trim_trailing_slash().layer(
+        Router::new()
+            .merge(post_controller::router(pool.clone()))
+            .merge(brand_controller::router(pool.clone()))
+            .layer(cors),
+    );
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     info!("Server configurations established.");
 
     info!("Starting server...");
-    axum::serve(listener, routes)
+    axum::serve(listener, ServiceExt::<Request>::into_make_service(app))
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap_or_else(|err| {
