@@ -23,6 +23,7 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
         .route("/v1/brand/:id", delete(self::delete_one))
         // Bulk operations
         .route("/v1/brand/bulk", post(self::create_many))
+        .route("/v1/brand/bulk", delete(self::delete_many))
         .with_state(pool)
 }
 
@@ -100,6 +101,16 @@ pub async fn delete_one(
     Path(brand_id): Path<Uuid>,
 ) -> Response {
     match brand_service::delete_brand(pool, brand_id) {
+        Ok(count) => get_status_code_for_count(count).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+pub async fn delete_many(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Json(brands_ids): Json<Vec<Uuid>>,
+) -> Response {
+    match brand_service::delete_brands(pool, brands_ids) {
         Ok(count) => get_status_code_for_count(count).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
