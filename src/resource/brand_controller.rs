@@ -19,6 +19,8 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
         // Single operations
         .route("/v1/brand", post(self::create_one))
         .route("/v1/brand/:id", get(self::get_one))
+        // Bulk operations
+        .route("/v1/brand/bulk", post(self::create_many))
         .with_state(pool)
 }
 
@@ -65,6 +67,16 @@ pub async fn create_one(
     Json(payload): Json<CreateBrand>,
 ) -> Response {
     match brand_service::create_brand(pool, payload) {
+        Ok(brand) => (StatusCode::OK, Json(brand)).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+pub async fn create_many(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Json(payload): Json<Vec<CreateBrand>>,
+) -> Response {
+    match brand_service::create_brands(pool, payload) {
         Ok(brand) => (StatusCode::OK, Json(brand)).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }

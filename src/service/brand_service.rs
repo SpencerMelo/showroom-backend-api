@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 
 use crate::models::brand_models::{Brand, CreateBrand};
 use crate::schema::brands::{self, dsl::*, BoxedQuery};
@@ -10,7 +10,7 @@ use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::{
     AppearsOnTable, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper,
 };
-use log::{error, info};
+use log::{error, info, warn};
 use std::error::Error;
 use uuid::Uuid;
 
@@ -92,7 +92,7 @@ pub fn create_brand(
         created_at: Utc::now(),
         updated_at: None,
         deleted_at: None,
-        created_by: String::from("admin"),
+        created_by: String::from("admin"), // TODO get it from request.
         updated_by: None,
         deleted_by: None,
     };
@@ -106,6 +106,50 @@ pub fn create_brand(
         Ok(brand) => Ok(brand),
         Err(err) => {
             error!("Unable to create brand, error: {}", err);
+            Err(err.into())
+        }
+    }
+}
+
+pub fn create_brands(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    new_brands: Vec<CreateBrand>,
+) -> Result<Vec<Brand>, Box<dyn Error>> {
+    info!("Create brands: {:?}", new_brands);
+
+    if new_brands.is_empty() {
+        warn!("No brands to create");
+        return Err("No brands to create".into());
+    }
+
+    let mut brand_entities: Vec<Brand> = Vec::new();
+    let now: DateTime<Utc> = Utc::now();
+    let default_created_by = String::from("admin");
+
+    for new_brand in new_brands {
+        brand_entities.push(Brand {
+            id: Uuid::new_v4(),
+            name: new_brand.name,
+            image_url: new_brand.image_url,
+            thumbnail_url: new_brand.thumbnail_url,
+            created_at: now,
+            updated_at: None,
+            deleted_at: None,
+            created_by: default_created_by.clone(),
+            updated_by: None,
+            deleted_by: None,
+        });
+    }
+
+    let result = diesel::insert_into(brands)
+        .values(&brand_entities)
+        .returning(Brand::as_returning())
+        .get_results(&mut get_connection(&pool)?);
+
+    match result {
+        Ok(created) => Ok(created),
+        Err(err) => {
+            error!("Unable to create brands, error: {}", err);
             Err(err.into())
         }
     }
