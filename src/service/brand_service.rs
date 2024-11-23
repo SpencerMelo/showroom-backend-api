@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 
-use crate::models::brand_models::{Brand, CreateBrand};
+use crate::models::brand_models::{Brand, CreateBrand, UpdateBrand};
 use crate::schema::brands::{self, dsl::*, BoxedQuery};
 use crate::utils::brand_columns::{get_column, BrandColumn};
 
@@ -150,6 +150,31 @@ pub fn create_brands(
         Ok(created) => Ok(created),
         Err(err) => {
             error!("Unable to create brands, error: {}", err);
+            Err(err.into())
+        }
+    }
+}
+
+pub fn update_brand(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    brand_id: Uuid,
+    updated_brand: UpdateBrand,
+) -> Result<usize, Box<dyn Error>> {
+    info!("Update brand {} to {:?}", brand_id, updated_brand);
+
+    let update_count = diesel::update(brands)
+        .filter(id.eq(brand_id))
+        .set((
+            updated_brand,
+            updated_at.eq(Utc::now()),
+            updated_by.eq(String::from("admin")),
+        ))
+        .execute(&mut get_connection(&pool)?);
+
+    match update_count {
+        Ok(count) => Ok(count),
+        Err(err) => {
+            error!("Unable to update brands, error: {}", err);
             Err(err.into())
         }
     }

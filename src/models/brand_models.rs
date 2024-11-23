@@ -21,14 +21,16 @@ pub struct Brand {
     pub deleted_by: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Insertable, Debug)]
+#[diesel(table_name = crate::schema::brands)]
 pub struct CreateBrand {
     pub name: String,
     pub image_url: String,
     pub thumbnail_url: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, AsChangeset, Debug)]
+#[diesel(table_name = crate::schema::brands)]
 pub struct UpdateBrand {
     pub name: String,
     pub image_url: String,
