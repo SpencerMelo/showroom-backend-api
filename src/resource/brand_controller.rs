@@ -1,0 +1,71 @@
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::routing::{get, post};
+use axum::{Json, Router};
+use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::PgConnection;
+use serde::Deserialize;
+use uuid::Uuid;
+
+use crate::models::brand_models::CreateBrand;
+use crate::service::brand_service;
+
+const MAX_LIMIT: u32 = 100;
+
+pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
+    Router::new()
+        .route("/v1/brand", get(get_all))
+        // Single operations
+        .route("/v1/brand", post(self::create_one))
+        .route("/v1/brand/:id", get(self::get_one))
+        .with_state(pool)
+}
+
+#[derive(Deserialize)]
+pub struct GetParams {
+    offset: Option<u32>,
+    limit: Option<u32>,
+    sort_by: Option<String>,
+    sort_order: Option<String>,
+    filter_by: Option<String>,
+    filter_term: Option<String>,
+}
+
+pub async fn get_all(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Query(params): Query<GetParams>,
+) -> Response {
+    match brand_service::get_brands(
+        pool,
+        params.offset.unwrap_or(0),
+        params.limit.unwrap_or(10).min(MAX_LIMIT),
+        params.sort_by.unwrap_or_else(|| String::from("name")),
+        params.sort_order.unwrap_or_else(|| String::from("asc")),
+        params.filter_by.unwrap_or_else(|| String::from("")),
+        params.filter_term.unwrap_or_else(|| String::from("")),
+    ) {
+        Ok(brands) => (StatusCode::OK, Json(brands)).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+pub async fn get_one(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Path(brand_id): Path<Uuid>,
+) -> Response {
+    match brand_service::get_brand(pool, brand_id) {
+        Ok(brand) => (StatusCode::OK, Json(brand)).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+pub async fn create_one(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Json(payload): Json<CreateBrand>,
+) -> Response {
+    match brand_service::create_brand(pool, payload) {
+        Ok(brand) => (StatusCode::OK, Json(brand)).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
