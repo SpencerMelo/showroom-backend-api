@@ -180,6 +180,25 @@ pub fn update_brand(
     }
 }
 
+pub fn delete_brand(
+    pool: Pool<ConnectionManager<PgConnection>>,
+    brand_id: Uuid,
+) -> Result<usize, Box<dyn Error>> {
+    info!("Delete brand with id: {}", brand_id);
+
+    let delete_count = diesel::delete(brands)
+        .filter(id.eq(brand_id))
+        .execute(&mut get_connection(&pool)?);
+
+    match delete_count {
+        Ok(count) => Ok(count),
+        Err(err) => {
+            error!("Unable to delete brand, error: {}", err);
+            Err(err.into())
+        }
+    }
+}
+
 fn get_connection(
     pool: &Pool<ConnectionManager<PgConnection>>,
 ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, Box<dyn Error>> {

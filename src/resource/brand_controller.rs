@@ -1,7 +1,7 @@
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch, post};
+use axum::routing::{delete, get, patch, post};
 use axum::{Json, Router};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
@@ -20,6 +20,7 @@ pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
         .route("/v1/brand", post(self::create_one))
         .route("/v1/brand/:id", get(self::get_one))
         .route("/v1/brand/:id", patch(self::update_one))
+        .route("/v1/brand/:id", delete(self::delete_one))
         // Bulk operations
         .route("/v1/brand/bulk", post(self::create_many))
         .with_state(pool)
@@ -91,5 +92,23 @@ pub async fn update_one(
     match brand_service::update_brand(pool, brand_id, payload) {
         Ok(brand) => (StatusCode::OK, Json(brand)).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+pub async fn delete_one(
+    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    Path(brand_id): Path<Uuid>,
+) -> Response {
+    match brand_service::delete_brand(pool, brand_id) {
+        Ok(count) => get_status_code_for_count(count).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+fn get_status_code_for_count(count: usize) -> StatusCode {
+    if count > 0 {
+        StatusCode::NO_CONTENT
+    } else {
+        StatusCode::NOT_FOUND
     }
 }
