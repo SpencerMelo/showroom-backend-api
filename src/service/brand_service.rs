@@ -12,10 +12,11 @@ use diesel::{
 };
 use log::{error, info, warn};
 use std::error::Error;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub fn get_brands(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     offset: u32,
     limit: u32,
     sort_by: String,
@@ -59,7 +60,7 @@ pub fn get_brands(
 }
 
 pub fn get_brand(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     brand_id: Uuid,
 ) -> Result<Brand, Box<dyn Error>> {
     info!("Get brand with id: {}", brand_id);
@@ -79,7 +80,7 @@ pub fn get_brand(
 }
 
 pub fn create_brand(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     create_brand: CreateBrand,
 ) -> Result<Brand, Box<dyn Error>> {
     info!("Create brand: {:?}", create_brand);
@@ -112,7 +113,7 @@ pub fn create_brand(
 }
 
 pub fn create_brands(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     new_brands: Vec<CreateBrand>,
 ) -> Result<Vec<Brand>, Box<dyn Error>> {
     info!("Create brands: {:?}", new_brands);
@@ -156,7 +157,7 @@ pub fn create_brands(
 }
 
 pub fn update_brand(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     brand_id: Uuid,
     updated_brand: UpdateBrand,
 ) -> Result<usize, Box<dyn Error>> {
@@ -181,7 +182,7 @@ pub fn update_brand(
 }
 
 pub fn delete_brand(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     brand_id: Uuid,
 ) -> Result<usize, Box<dyn Error>> {
     info!("Delete brand with id: {}", brand_id);
@@ -200,7 +201,7 @@ pub fn delete_brand(
 }
 
 pub fn delete_brands(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     brands_ids: Vec<Uuid>,
 ) -> Result<usize, Box<dyn Error>> {
     info!("Delete brands with ids: {:?}", brands_ids);

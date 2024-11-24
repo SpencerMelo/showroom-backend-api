@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -13,7 +15,7 @@ use crate::service::brand_service;
 
 const MAX_LIMIT: u32 = 100;
 
-pub fn router(pool: Pool<ConnectionManager<PgConnection>>) -> Router {
+pub fn router(pool: Arc<Pool<ConnectionManager<PgConnection>>>) -> Router {
     Router::new()
         .route("/v1/brand", get(get_all))
         // Single operations
@@ -38,7 +40,7 @@ pub struct GetParams {
 }
 
 pub async fn get_all(
-    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    State(pool): State<Arc<Pool<ConnectionManager<PgConnection>>>>,
     Query(params): Query<GetParams>,
 ) -> Response {
     match brand_service::get_brands(
@@ -56,7 +58,7 @@ pub async fn get_all(
 }
 
 pub async fn get_one(
-    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    State(pool): State<Arc<Pool<ConnectionManager<PgConnection>>>>,
     Path(brand_id): Path<Uuid>,
 ) -> Response {
     match brand_service::get_brand(pool, brand_id) {
@@ -66,7 +68,7 @@ pub async fn get_one(
 }
 
 pub async fn create_one(
-    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    State(pool): State<Arc<Pool<ConnectionManager<PgConnection>>>>,
     Json(payload): Json<CreateBrand>,
 ) -> Response {
     match brand_service::create_brand(pool, payload) {
@@ -76,7 +78,7 @@ pub async fn create_one(
 }
 
 pub async fn create_many(
-    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    State(pool): State<Arc<Pool<ConnectionManager<PgConnection>>>>,
     Json(payload): Json<Vec<CreateBrand>>,
 ) -> Response {
     match brand_service::create_brands(pool, payload) {
@@ -86,7 +88,7 @@ pub async fn create_many(
 }
 
 pub async fn update_one(
-    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    State(pool): State<Arc<Pool<ConnectionManager<PgConnection>>>>,
     Path(brand_id): Path<Uuid>,
     Json(payload): Json<UpdateBrand>,
 ) -> Response {
@@ -97,7 +99,7 @@ pub async fn update_one(
 }
 
 pub async fn delete_one(
-    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    State(pool): State<Arc<Pool<ConnectionManager<PgConnection>>>>,
     Path(brand_id): Path<Uuid>,
 ) -> Response {
     match brand_service::delete_brand(pool, brand_id) {
@@ -107,7 +109,7 @@ pub async fn delete_one(
 }
 
 pub async fn delete_many(
-    State(pool): State<Pool<ConnectionManager<PgConnection>>>,
+    State(pool): State<Arc<Pool<ConnectionManager<PgConnection>>>>,
     Json(brands_ids): Json<Vec<Uuid>>,
 ) -> Response {
     match brand_service::delete_brands(pool, brands_ids) {

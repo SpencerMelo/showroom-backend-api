@@ -11,11 +11,12 @@ use diesel::{
 };
 use log::{error, info};
 use std::error::Error;
+use std::sync::Arc;
 
 use uuid::Uuid;
 
 pub fn get_posts(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     offset: u32,
     limit: u32,
     sort_by: String,
@@ -64,7 +65,7 @@ pub fn get_posts(
 }
 
 pub fn get_post(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     post_id: Uuid,
 ) -> Result<Post, Box<dyn Error>> {
     info!("Get post with id: {}", post_id);
@@ -84,7 +85,7 @@ pub fn get_post(
 }
 
 pub fn create_post(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     create_post: CreatePost,
 ) -> Result<Post, Box<dyn Error>> {
     info!("Create post: {:?}", create_post);
@@ -123,7 +124,7 @@ pub fn create_post(
 }
 
 pub fn create_posts(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     new_posts: Vec<CreatePost>,
 ) -> Result<Vec<Post>, Box<dyn Error>> {
     info!("Create posts: {:?}", new_posts);
@@ -171,7 +172,7 @@ pub fn create_posts(
 }
 
 pub fn update_post(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     post_id: Uuid,
     updated_post: UpdatePost,
 ) -> Result<usize, Box<dyn Error>> {
@@ -211,7 +212,7 @@ pub fn update_post(
 }
 
 pub fn delete_post(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     post_id: Uuid,
 ) -> Result<usize, Box<dyn Error>> {
     info!("Delete post with id: {}", post_id);
@@ -230,7 +231,7 @@ pub fn delete_post(
 }
 
 pub fn delete_posts(
-    pool: Pool<ConnectionManager<PgConnection>>,
+    pool: Arc<Pool<ConnectionManager<PgConnection>>>,
     post_ids: Vec<Uuid>,
 ) -> Result<usize, Box<dyn Error>> {
     info!("Delete posts with ids: {:?}", post_ids);
